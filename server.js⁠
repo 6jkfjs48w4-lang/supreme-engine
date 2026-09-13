@@ -1,0 +1,53 @@
+const express = require("express");
+const axios = require("axios");
+const path = require("path");
+
+const app = express();
+
+app.use(express.json());
+app.use(express.static("public"));
+
+const whitelist = new Set();
+
+function extractUserId(profileUrl) {
+  const match = profileUrl.match(/users\/(\d+)/);
+  return match ? match[1] : null;
+}
+
+app.post("/api/register-whitelist", async (req, res) => {
+  const { profileUrl, placeId } = req.body;
+  const userId = extractUserId(profileUrl);
+
+  if (!userId) {
+    return res.status(400).json({ success: false, message: "올바른 프로필 링크 형태가 아닙니다." });
+  }
+
+  try {
+    const placeRes = await axios.get(`https://apis.roblox.com/universes/v1/places/${placeId}/universe`);
+    const universeId = placeRes.data.universeId;
+
+    const universeRes = await axios.get(`https://games.roblox.com/v1/games?universeIds=${universeId}`);
+    const creatorId = universeRes.data.data[0].creator.id;
+
+    if (String(userId) === String(creatorId)) {
+      whitelist.add(String(userId));
+      return res.json({ success: true, message: "✅ 화이트리스트 등록 완료! (맵 소유자 확인됨)" });
+    } else {
+      return res.status(403).json({ success: false, message: "❌ 해당 맵의 소유자 프로필이 아닙니다." });
+    }
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "로블록스 정보 조회 실패. Place ID를 확인하세요." });
+  }
+});
+
+app.get("/api/check-whitelist/:userId", (req, res) => {
+  const { userId } = req.params;
+  const isWhitelisted = whitelist.has(String(userId));
+  res.json({ isWhitelisted });
+});
+
+const listener = app.listen(process.env.PORT || 3000, () => {
+  console.log("Server running on port " + listener.address().port);
+});
+
+
