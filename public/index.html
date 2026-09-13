@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>화이트리스트 등록</title>
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #191b1d;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .card {
+      background: #232527;
+      padding: 30px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    h2 { margin-top: 0; color: #00a2ff; text-align: center; }
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      border: 1px solid #393b3d;
+      border-radius: 8px;
+      background: #111213;
+      color: #fff;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 8px;
+      background: #00a2ff;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:active { background: #0082cc; }
+    #result { margin-top: 20px; font-size: 14px; text-align: center; word-break: break-all; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>화이트리스트 등록</h2>
+    <input type="text" id="profileUrl" placeholder="로블록스 프로필 링크">
+    <input type="text" id="placeId" placeholder="로블록스 Place ID (맵 ID)">
+    <button onclick="register()">화이트리스트 등록하기</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function register() {
+      const profileUrl = document.getElementById('profileUrl').value.trim();
+      const placeId = document.getElementById('placeId').value.trim();
+      const resultDiv = document.getElementById('result');
+
+      if (!profileUrl || !placeId) {
+        resultDiv.innerText = "⚠️ 모든 항목을 입력해주세요.";
+        resultDiv.style.color = "#ffaa00";
+        return;
+      }
+
+      resultDiv.innerText = "인증 확인 중...";
+      resultDiv.style.color = "#cccccc";
+
+      try {
+        const res = await fetch('/api/register-whitelist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileUrl, placeId })
+        });
+
+        const data = await res.json();
+        resultDiv.innerText = data.message;
+        resultDiv.style.color = data.success ? "#00ff88" : "#ff4444";
+      } catch (err) {
+        resultDiv.innerText = "❌ 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";
+        resultDiv.style.color = "#ff4444";
+      }
+    }
+  </script>
+</body>
+</html>
